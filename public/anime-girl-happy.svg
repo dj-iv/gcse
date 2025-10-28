@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 300" fill="none">
+  <!-- Anime Girl 2 - Cheerful -->
+  <g>
+    <!-- Body -->
+    <ellipse cx="100" cy="210" rx="35" ry="45" fill="#E6E6FA"/>
+    
+    <!-- Neck -->
+    <rect x="92" y="150" width="16" height="18" rx="4" fill="#FFDAB9"/>
+    
+    <!-- Head -->
+    <circle cx="100" cy="110" r="40" fill="#FFDAB9"/>
+    
+    <!-- Hair -->
+    <ellipse cx="100" cy="90" rx="48" ry="50" fill="#DDA0DD"/>
+    <circle cx="70" cy="100" r="20" fill="#DDA0DD"/>
+    <circle cx="130" cy="100" r="20" fill="#DDA0DD"/>
+    
+    <!-- Twin tails -->
+    <ellipse cx="55" cy="120" rx="18" ry="45" fill="#DDA0DD" transform="rotate(-30 55 120)"/>
+    <ellipse cx="145" cy="120" rx="18" ry="45" fill="#DDA0DD" transform="rotate(30 145 120)"/>
+    
+    <!-- Bangs -->
+    <ellipse cx="85" cy="80" rx="12" ry="22" fill="#DA70D6"/>
+    <ellipse cx="100" cy="75" rx="14" ry="25" fill="#DA70D6"/>
+    <ellipse cx="115" cy="80" rx="12" ry="22" fill="#DA70D6"/>
+    
+    <!-- Face -->
+    <!-- Eyes (happy closed) -->
+    <path d="M 80 105 Q 90 110 100 105" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 100 105 Q 110 110 120 105" stroke="black" stroke-width="3" fill="none" stroke-linecap="round"/>
+    
+    <!-- Blush -->
+    <ellipse cx="72" cy="115" rx="10" ry="6" fill="#FFB6C1" opacity="0.7"/>
+    <ellipse cx="128" cy="115" rx="10" ry="6" fill="#FFB6C1" opacity="0.7"/>
+    
+    <!-- Big smile -->
+    <path d="M 80 125 Q 100 135 120 125" stroke="#FF1493" stroke-width="2.5" fill="white"/>
+    <path d="M 80 125 Q 100 133 120 125" fill="#FFB6C1" opacity="0.3"/>
+    
+    <!-- Arms up (celebrating) -->
+    <ellipse cx="70" cy="175" rx="10" ry="30" fill="#FFDAB9" transform="rotate(-45 70 175)"/>
+    <ellipse cx="130" cy="175" rx="10" ry="30" fill="#FFDAB9" transform="rotate(45 130 175)"/>
+    
+    <!-- Hands -->
+    <circle cx="55" cy="165" r="8" fill="#FFDAB9"/>
+    <circle cx="145" cy="165" r="8" fill="#FFDAB9"/>
+    
+    <!-- Hair ribbons -->
+    <ellipse cx="55" cy="100" rx="10" ry="7" fill="#FF69B4"/>
+    <ellipse cx="45" cy="100" rx="7" ry="5" fill="#FF69B4"/>
+    <ellipse cx="65" cy="100" rx="7" ry="5" fill="#FF69B4"/>
+    
+    <ellipse cx="145" cy="100" rx="10" ry="7" fill="#FF69B4"/>
+    <ellipse cx="135" cy="100" rx="7" ry="5" fill="#FF69B4"/>
+    <ellipse cx="155" cy="100" rx="7" ry="5" fill="#FF69B4"/>
+    
+    <!-- Star accessories -->
+    <text x="50" y="155" font-size="20" fill="#FFD700">★</text>
+    <text x="140" y="155" font-size="20" fill="#FFD700">★</text>
+  </g>
+</svg>

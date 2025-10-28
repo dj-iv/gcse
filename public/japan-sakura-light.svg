@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Cherry Blossom (Sakura) -->
+  <g opacity="0.6">
+    <!-- Center of flower -->
+    <circle cx="100" cy="100" r="8" fill="#FDE047"/>
+    
+    <!-- Petals -->
+    <ellipse cx="100" cy="75" rx="18" ry="28" fill="#FECDD3" transform="rotate(0 100 100)"/>
+    <ellipse cx="125" cy="87" rx="18" ry="28" fill="#FECDD3" transform="rotate(72 100 100)"/>
+    <ellipse cx="115" cy="118" rx="18" ry="28" fill="#FECDD3" transform="rotate(144 100 100)"/>
+    <ellipse cx="85" cy="118" rx="18" ry="28" fill="#FECDD3" transform="rotate(216 100 100)"/>
+    <ellipse cx="75" cy="87" rx="18" ry="28" fill="#FECDD3" transform="rotate(288 100 100)"/>
+    
+    <!-- Petal details -->
+    <ellipse cx="100" cy="75" rx="12" ry="20" fill="#FBE8EB" transform="rotate(0 100 100)"/>
+    <ellipse cx="125" cy="87" rx="12" ry="20" fill="#FBE8EB" transform="rotate(72 100 100)"/>
+    <ellipse cx="115" cy="118" rx="12" ry="20" fill="#FBE8EB" transform="rotate(144 100 100)"/>
+    <ellipse cx="85" cy="118" rx="12" ry="20" fill="#FBE8EB" transform="rotate(216 100 100)"/>
+    <ellipse cx="75" cy="87" rx="12" ry="20" fill="#FBE8EB" transform="rotate(288 100 100)"/>
+    
+    <!-- Stamen dots -->
+    <circle cx="95" cy="95" r="2" fill="#FB7185"/>
+    <circle cx="105" cy="95" r="2" fill="#FB7185"/>
+    <circle cx="100" cy="103" r="2" fill="#FB7185"/>
+    <circle cx="93" cy="103" r="2" fill="#FB7185"/>
+    <circle cx="107" cy="103" r="2" fill="#FB7185"/>
+  </g>
+  
+  <!-- Additional smaller blossoms for depth -->
+  <g opacity="0.4">
+    <circle cx="160" cy="50" r="4" fill="#FDE047"/>
+    <ellipse cx="160" cy="42" rx="8" ry="12" fill="#FECDD3"/>
+    <ellipse cx="168" cy="50" rx="8" ry="12" fill="#FECDD3" transform="rotate(72 160 50)"/>
+    <ellipse cx="160" cy="58" rx="8" ry="12" fill="#FECDD3" transform="rotate(144 160 50)"/>
+    <ellipse cx="152" cy="50" rx="8" ry="12" fill="#FECDD3" transform="rotate(216 160 50)"/>
+  </g>
+  
+  <g opacity="0.3">
+    <circle cx="40" cy="160" r="3" fill="#FDE047"/>
+    <ellipse cx="40" cy="154" rx="6" ry="9" fill="#FECDD3"/>
+    <ellipse cx="46" cy="160" rx="6" ry="9" fill="#FECDD3" transform="rotate(72 40 160)"/>
+    <ellipse cx="40" cy="166" rx="6" ry="9" fill="#FECDD3" transform="rotate(144 40 160)"/>
+  </g>
+</svg>
