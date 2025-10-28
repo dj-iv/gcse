@@ -212,6 +212,9 @@ export default function GCSEToJapanDashboard() {
     localStorage.setItem("gcse-cumulative-points", String(cumulativePoints));
   }, [cumulativePoints]);
 
+  // Check if today is Sunday
+  const isSunday = new Date().getDay() === 0;
+
   const schedule = useMemo(() => buildSchedule(), []);
 
   const weeks = useMemo(() => {
@@ -271,31 +274,52 @@ export default function GCSEToJapanDashboard() {
   }
 
   function lockWeekAndAddPoints() {
-    // parent click at end of week to "bank" points towards Japan
+    // Check if it's Sunday (day 0)
+    const today = new Date();
+    const isSunday = today.getDay() === 0;
+    
+    if (!isSunday) {
+      alert("⏰ Wait! You can only lock your week on Sundays!\n\nThis ensures you've completed the full week before banking your points. Come back on Sunday! 💖");
+      return;
+    }
+    
+    // Confirm before adding points
+    const confirmed = window.confirm(
+      `🎉 Lock Week ${activeWeek}?\n\n` +
+      `This will add ${points} points to your Japan total!\n\n` +
+      `✓ You've completed ${completedTasks}/${totalTasks} tasks this week\n\n` +
+      `Are you ready to bank these points?`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+    
+    // Add points to cumulative total
     setCumulativePoints((p) => p + points);
-    alert(`Week ${activeWeek} locked! 🎉 ${points} points added to Japan fund!`);
+    alert(`🎊 Amazing work, Katerina! Week ${activeWeek} is locked!\n\n${points} points added to your Japan fund! 🇯🇵✨`);
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 text-slate-800 flex flex-col gap-6 p-4 md:p-8 relative overflow-hidden">
-      {/* Anime Girl */}
+      {/* Anime Girl - Centered and always visible */}
       <motion.div
-        className="absolute bottom-5 left-5 w-40 md:w-52 z-0"
+        className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-48 md:w-64 lg:w-72 z-50 pointer-events-none"
         animate={{
           y: [0, -15, 0],
-          rotate: [0, 2, -2, 0],
         }}
         transition={{
           duration: 4,
           repeat: Infinity,
           ease: "easeInOut",
         }}
+        style={{ marginBottom: '-20px' }}
       >
         <img 
           src="/anime-girl-student.png" 
           alt="Study girl" 
-          className="drop-shadow-2xl"
-          style={{ filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.2))' }}
+          className="drop-shadow-2xl w-full h-auto"
+          style={{ filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.3))' }}
         />
       </motion.div>
       
@@ -469,11 +493,21 @@ export default function GCSEToJapanDashboard() {
               <div className="text-sm font-bold text-pink-600">Points this week: {points} 🎯</div>
               <div className="text-xs text-purple-500">1 task = 1 point</div>
               <Button 
-                onClick={lockWeekAndAddPoints} 
-                className="mt-2 w-full text-sm font-semibold rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-md"
+                onClick={lockWeekAndAddPoints}
+                disabled={!isSunday}
+                className={`mt-2 w-full text-sm font-semibold rounded-xl shadow-md ${
+                  isSunday 
+                    ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600" 
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
-                Lock week & add to Japan total 🔒
+                {isSunday ? "🔒 Lock week & add to Japan total" : "⏰ Only on Sundays!"}
               </Button>
+              {!isSunday && (
+                <div className="text-[10px] text-center text-purple-500 mt-1">
+                  Come back on Sunday to lock your week! 💖
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -573,7 +607,7 @@ export default function GCSEToJapanDashboard() {
       </section>
 
       {/* WEEK VIEW TIMETABLE */}
-      <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+      <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10 pb-32 md:pb-40">
         {currentWeekDays.map((day) => (
           <motion.div
             key={day.iso}
