@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { auth, db } from "@/lib/firebase";
+import { doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { signOut, User } from "firebase/auth";
+import Auth from "@/components/Auth";
 
 // --- SAMPLE DATA MODEL ---
-// localStorage persists progress across sessions
+// Firebase syncs progress across all devices
 
 const START_DATE = new Date("2025-10-27");
 const END_DATE = new Date("2025-12-19");
@@ -181,36 +185,18 @@ function getWeekNumber(date: Date): number {
 }
 
 export default function GCSEToJapanDashboard() {
+  // Authentication state
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   // doneLog: { [isoDate]: { [taskIndex]: true } }
   const [doneLog, setDoneLog] = useState<Record<string, Record<number, boolean>>>({});
   const [cumulativePoints, setCumulativePoints] = useState(0);
   const [activeWeek, setActiveWeek] = useState(1);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedLog = localStorage.getItem("gcse-done-log");
-    const savedPoints = localStorage.getItem("gcse-cumulative-points");
-    if (savedLog) {
-      try {
-        setDoneLog(JSON.parse(savedLog));
-      } catch (e) {
-        console.error("Failed to parse saved log", e);
-      }
-    }
-    if (savedPoints) {
-      setCumulativePoints(Number(savedPoints));
-    }
-  }, []);
-
-  // Save to localStorage whenever doneLog changes
-  useEffect(() => {
-    localStorage.setItem("gcse-done-log", JSON.stringify(doneLog));
-  }, [doneLog]);
-
-  // Save cumulative points
-  useEffect(() => {
-    localStorage.setItem("gcse-cumulative-points", String(cumulativePoints));
-  }, [cumulativePoints]);
+  
+  // Use ref to track if we're loading from Firestore (doesn't trigger re-renders)
+  const isLoadingFromFirestore = useRef(false);
+  const hasInitialized = useRef(false);
 
   // Check if today is Sunday
   const isSunday = new Date().getDay() === 0;
@@ -262,6 +248,72 @@ export default function GCSEToJapanDashboard() {
     return rawDays < 0 ? 0 : rawDays;
   }, []);
 
+  // Handle authentication
+  const handleAuthenticated = (authenticatedUser: User) => {
+    setUser(authenticatedUser);
+    setIsAuthenticated(true);
+  };
+
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
+  };
+
+  // Load and sync data from Firestore
+  useEffect(() => {
+    if (!user) return;
+
+    const userProgressRef = doc(db, "users", user.uid, "progress", "current");
+
+    // Subscribe to real-time updates
+    const unsubscribe = onSnapshot(userProgressRef, (docSnap) => {
+      isLoadingFromFirestore.current = true;
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setDoneLog(data.doneLog || {});
+        setCumulativePoints(data.cumulativePoints || 0);
+        setActiveWeek(data.activeWeek || 1);
+      }
+      hasInitialized.current = true;
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Save to Firestore whenever data changes (but not when loading from Firestore)
+  useEffect(() => {
+    if (!user || !hasInitialized.current) return;
+    
+    // Skip save if we're currently loading from Firestore
+    if (isLoadingFromFirestore.current) {
+      isLoadingFromFirestore.current = false;
+      return;
+    }
+
+    const saveToFirestore = async () => {
+      try {
+        const userProgressRef = doc(db, "users", user.uid, "progress", "current");
+        await setDoc(userProgressRef, {
+          doneLog,
+          cumulativePoints,
+          activeWeek,
+          lastUpdated: new Date().toISOString(),
+        });
+        console.log("✅ Saved to Firestore");
+      } catch (error) {
+        console.error("Error saving to Firestore:", error);
+      }
+    };
+
+    saveToFirestore();
+  }, [doneLog, cumulativePoints, activeWeek, user]);
+
   function toggleTaskDone(dayIso: string, taskIdx: number) {
     setDoneLog((prev) => {
       const dayLog = prev[dayIso] ? { ...prev[dayIso] } : {};
@@ -298,6 +350,11 @@ export default function GCSEToJapanDashboard() {
     // Add points to cumulative total
     setCumulativePoints((p) => p + points);
     alert(`🎊 Amazing work, Katerina! Week ${activeWeek} is locked!\n\n${points} points added to your Japan fund! 🇯🇵✨`);
+  }
+
+  // Show auth screen if not authenticated
+  if (!isAuthenticated) {
+    return <Auth onAuthenticated={handleAuthenticated} />;
   }
 
   return (
@@ -460,6 +517,12 @@ export default function GCSEToJapanDashboard() {
             <span className="text-xs font-medium bg-gradient-to-r from-pink-200 to-purple-200 text-pink-700 px-3 py-1 rounded-full border-2 border-pink-300">
               Term Goal: 19 Dec 2025
             </span>
+            <button
+              onClick={handleSignOut}
+              className="text-xs font-medium bg-gray-200 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-300 transition"
+            >
+              Sign Out
+            </button>
           </div>
           <p className="text-sm md:text-base text-purple-700 mt-2 font-medium">
             "Every study session is one step closer to ramen in Tokyo." 🍜
@@ -472,6 +535,9 @@ export default function GCSEToJapanDashboard() {
           <div className="text-sm text-purple-600 font-medium">Days until 19 Dec 2025</div>
           <div className="text-3xl font-semibold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             {daysLeft}
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Synced across all devices ☁️
           </div>
         </motion.div>
       </header>
