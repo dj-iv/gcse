@@ -198,6 +198,12 @@ export default function GCSEToJapanDashboard() {
   const isLoadingFromFirestore = useRef(false);
   const hasInitialized = useRef(false);
 
+  // Parent monitoring: track whose data we're viewing
+  const KATERINA_EMAIL = "rom.kat08@gmail.com";
+  const PARENT_EMAILS = ["romanov.ivan@gmail.com", "zudova.elena@gmail.com"];
+  const [viewingUserId, setViewingUserId] = useState<string | null>(null);
+  const [isParentMode, setIsParentMode] = useState(false);
+
   // Check if today is Sunday
   const isSunday = new Date().getDay() === 0;
 
@@ -249,9 +255,57 @@ export default function GCSEToJapanDashboard() {
   }, []);
 
   // Handle authentication
-  const handleAuthenticated = (authenticatedUser: User) => {
+  const handleAuthenticated = async (authenticatedUser: User) => {
     setUser(authenticatedUser);
     setIsAuthenticated(true);
+    
+    // If this is Katerina, create/update her email mapping for parent access
+    if (authenticatedUser.email === KATERINA_EMAIL) {
+      try {
+        const mappingRef = doc(db, "userMappings", KATERINA_EMAIL);
+        await setDoc(mappingRef, {
+          userId: authenticatedUser.uid,
+          email: KATERINA_EMAIL,
+          lastUpdated: new Date().toISOString(),
+        });
+        console.log("✅ Katerina's user mapping created/updated");
+      } catch (error) {
+        console.error("Error creating user mapping:", error);
+      }
+      setIsParentMode(false);
+      setViewingUserId(authenticatedUser.uid);
+    }
+    // Check if this is a parent account
+    else if (authenticatedUser.email && PARENT_EMAILS.includes(authenticatedUser.email)) {
+      setIsParentMode(true);
+      // Parent views Katerina's data
+      const katerinasUserId = await findUserIdByEmail(KATERINA_EMAIL);
+      if (katerinasUserId) {
+        setViewingUserId(katerinasUserId);
+        console.log("👀 Parent mode activated - viewing Katerina's progress");
+      } else {
+        alert("⚠️ Katerina needs to sign in at least once before you can view her progress!");
+      }
+    } else {
+      // Other users view their own data
+      setIsParentMode(false);
+      setViewingUserId(authenticatedUser.uid);
+    }
+  };
+
+  // Helper function to find userId by email (simplified approach)
+  const findUserIdByEmail = async (email: string): Promise<string> => {
+    // We'll store a mapping in Firestore for parent access
+    try {
+      const mappingRef = doc(db, "userMappings", email);
+      const mappingSnap = await getDoc(mappingRef);
+      if (mappingSnap.exists()) {
+        return mappingSnap.data().userId;
+      }
+    } catch (error) {
+      console.error("Error finding user by email:", error);
+    }
+    return "";
   };
 
   // Handle sign out
@@ -267,9 +321,9 @@ export default function GCSEToJapanDashboard() {
 
   // Load and sync data from Firestore
   useEffect(() => {
-    if (!user) return;
+    if (!user || !viewingUserId) return;
 
-    const userProgressRef = doc(db, "users", user.uid, "progress", "current");
+    const userProgressRef = doc(db, "users", viewingUserId, "progress", "current");
 
     // Subscribe to real-time updates
     const unsubscribe = onSnapshot(userProgressRef, (docSnap) => {
@@ -284,11 +338,11 @@ export default function GCSEToJapanDashboard() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, viewingUserId]);
 
-  // Save to Firestore whenever data changes (but not when loading from Firestore)
+  // Save to Firestore whenever data changes (but not when loading from Firestore or in parent mode)
   useEffect(() => {
-    if (!user || !hasInitialized.current) return;
+    if (!user || !viewingUserId || !hasInitialized.current || isParentMode) return;
     
     // Skip save if we're currently loading from Firestore
     if (isLoadingFromFirestore.current) {
@@ -298,7 +352,7 @@ export default function GCSEToJapanDashboard() {
 
     const saveToFirestore = async () => {
       try {
-        const userProgressRef = doc(db, "users", user.uid, "progress", "current");
+        const userProgressRef = doc(db, "users", viewingUserId, "progress", "current");
         await setDoc(userProgressRef, {
           doneLog,
           cumulativePoints,
@@ -312,7 +366,7 @@ export default function GCSEToJapanDashboard() {
     };
 
     saveToFirestore();
-  }, [doneLog, cumulativePoints, activeWeek, user]);
+  }, [doneLog, cumulativePoints, activeWeek, user, viewingUserId, isParentMode]);
 
   function toggleTaskDone(dayIso: string, taskIdx: number) {
     setDoneLog((prev) => {
@@ -359,6 +413,17 @@ export default function GCSEToJapanDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 text-slate-800 flex flex-col gap-6 p-4 md:p-8 relative overflow-hidden">
+      {/* Parent Mode Banner */}
+      {isParentMode && (
+        <motion.div
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed top-0 left-0 right-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 shadow-lg z-50 text-center font-semibold"
+        >
+          👀 Parent View Mode - Viewing Katerina's Progress (Read Only)
+        </motion.div>
+      )}
+      
       {/* Anime Girl - Centered and always visible */}
       <motion.div
         className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-48 md:w-64 lg:w-72 z-50 pointer-events-none"
@@ -560,16 +625,20 @@ export default function GCSEToJapanDashboard() {
               <div className="text-xs text-purple-500">1 task = 1 point</div>
               <Button 
                 onClick={lockWeekAndAddPoints}
-                disabled={!isSunday}
+                disabled={!isSunday || isParentMode}
                 className={`mt-2 w-full text-sm font-semibold rounded-xl shadow-md ${
-                  isSunday 
+                  isSunday && !isParentMode
                     ? "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600" 
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
-                {isSunday ? "🔒 Lock week & add to Japan total" : "⏰ Only on Sundays!"}
+                {isParentMode 
+                  ? "🔒 Read-only mode" 
+                  : isSunday 
+                    ? "🔒 Lock week & add to Japan total" 
+                    : "⏰ Only on Sundays!"}
               </Button>
-              {!isSunday && (
+              {!isSunday && !isParentMode && (
                 <div className="text-[10px] text-center text-purple-500 mt-1">
                   Come back on Sunday to lock your week! 💖
                 </div>
@@ -710,14 +779,16 @@ export default function GCSEToJapanDashboard() {
                           {task.subject}
                         </div>
                         <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          className={`text-[10px] px-2 py-1 rounded-full font-bold border-2 cursor-pointer ${
+                          whileHover={{ scale: isParentMode ? 1 : 1.1 }}
+                          whileTap={{ scale: isParentMode ? 1 : 0.9 }}
+                          className={`text-[10px] px-2 py-1 rounded-full font-bold border-2 ${
+                            isParentMode ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+                          } ${
                             done
                               ? "bg-green-200 text-green-800 border-green-400"
                               : "bg-pink-100 text-pink-700 border-pink-300"
                           }`}
-                          onClick={() => toggleTaskDone(day.iso, idx)}
+                          onClick={() => !isParentMode && toggleTaskDone(day.iso, idx)}
                         >
                           {done ? "Done ✓" : task.minutes + "m ⏱️"}
                         </motion.div>
